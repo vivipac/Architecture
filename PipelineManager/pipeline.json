@@ -1,0 +1,29 @@
+[
+  {    
+    "module_name": "acquisition",
+    "input": [
+      ""
+    ],
+    "output": [
+      "processing"
+    ]
+  },
+  {    
+    "module_name": "processing",
+    "input": [
+      "acquisition"
+    ],
+    "output": [
+      "communication_plc"
+    ]
+  },
+  {    
+    "module_name": "communication_plc",
+    "input": [
+      "processing"
+    ],
+    "output": [
+      ""
+    ]
+  }
+]
