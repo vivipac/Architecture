@@ -6,10 +6,10 @@
 #include <jsoncpp/json/json.h>
 
       
-class PipelineControler
+class PipelineController
 {
     public:
-    PipelineControler(const std::string& pipelineConfig = "/opt/fm/etc/pipeline.json");
+    PipelineController(const std::string& pipelineConfig = "/opt/fm/etc/pipeline.json");
        
     std::vector<std::string> whoAreNext(const std::string& moduleName) const;
 
