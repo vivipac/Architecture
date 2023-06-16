@@ -1,4 +1,4 @@
-#include "moduleLoader.h"
+#include "ModuleLoader.h"
 #include "errno.h"
 #include "cstring"
 
@@ -19,7 +19,7 @@ void ModuleLoader::unload(const std::string& filename)
     }
 }
 
-Module* ModuleLoader::load(const std::string& filename)
+ModuleLoader::ModulePtr ModuleLoader::load(const std::string& filename)
 {
     char* error = nullptr;
     void* handle = ::dlopen(filename.c_str(), RTLD_NOW);
@@ -44,5 +44,5 @@ Module* ModuleLoader::load(const std::string& filename)
 
     m_filename_handle_map[filename] = handle;
 
-    return module;
+    return ModulePtr(module);
 }

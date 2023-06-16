@@ -1,16 +1,21 @@
-#pragma once
-#include <iostream>
+#ifndef MODULE_LOADER_H
+#define MODULE_LOADER_H
+
 #include <dlfcn.h>
+#include <string>
+#include <memory>
 #include <unordered_map>
 
-#include "module.h"
+#include "../Module/Module.h"
 
 class ModuleLoader
-{
+{    
     public:
+    using ModulePtr = std::shared_ptr<Module>;
+
     ModuleLoader();    
 
-    Module* load(const std::string& filename);
+    ModulePtr load(const std::string& filename);
 
     void unload(const std::string& filename);
 
@@ -18,3 +23,5 @@ class ModuleLoader
     std::unordered_map<std::string, void*> m_filename_handle_map;
 
 };
+
+#endif
