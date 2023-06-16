@@ -10,6 +10,7 @@
 #include "../../System/EventLoop.h"
 #include "../../System/Timer.h"
      
+//to create the module.so : g++ -c -fpic Acquisition.cpp $(pkg-config --cflags --libs opencv4)&& g++ -shared Acquisition.o -o Acquisition.so && rm Acquisition.o
 
 class Acquisition : public Module
 {

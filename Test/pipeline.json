@@ -1,0 +1,29 @@
+[
+  {    
+    "module_name": "Acquisition",
+    "input": [
+      ""
+    ],
+    "output": [
+      "Vision"
+    ]
+  },
+  {    
+    "module_name": "Vision",
+    "input": [
+      "Acquisition"
+    ],
+    "output": [
+      "ComPlc"
+    ]
+  },
+  {    
+    "module_name": "ComPlc",
+    "input": [
+      "Vision"
+    ],
+    "output": [
+      ""
+    ]
+  }
+]

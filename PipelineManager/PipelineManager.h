@@ -22,12 +22,16 @@ class PipelineManager
 
     void loadModules();
 
-    void initModules();    
+    void initModules();   
+
+    void startPipeline(); 
 
     private:
     void configureModules();
 
-    void startPipeline();
+    void nextSlot(const std::shared_ptr<EventArgs>& eventArgs);
+
+    void errorSlot(const std::shared_ptr<EventArgs>& eventArgs);    
 
     std::vector<std::string> m_moduleNameList;
     PipelineController m_pipelineController;

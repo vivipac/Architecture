@@ -1,6 +1,8 @@
 #include "PipelineManager.h"
 
 PipelineManager::PipelineManager():
+    m_pipelineController("./pipeline.json"),
+    m_moduleManager("./Modules"),
     m_pEventLoop( new vivi::EventLoop )
 {
     m_moduleNameList = m_pipelineController.getAllModules();
@@ -11,9 +13,15 @@ void PipelineManager::componentsInitialization()
     //add Watcher in the eventLoop
 }
 
-void PipelineManager::subscribe()
+void PipelineManager::errorSlot(const std::shared_ptr<EventArgs>& eventArgs)
 {
-    m_pEventLoop->subscribe("next", [this](const std::shared_ptr<EventArgs>& eventArgs)
+    //dynamic_cast EventArgs to ErrorInfo
+    //log and communication with ErrorServer
+}
+
+void PipelineManager::nextSlot(const std::shared_ptr<EventArgs>& eventArgs)
+{
+    if( eventArgs )
     {
         std::shared_ptr<ModuleInfo> moduleInfo = std::dynamic_pointer_cast<ModuleInfo>(eventArgs);
         if( moduleInfo != nullptr)
@@ -28,17 +36,24 @@ void PipelineManager::subscribe()
                     pModule->run(eventArgs);
                 });
             }
+            return;
         }
-        else
-        {
-            //error
-        }        
+    }
+
+    //error
+    
+}
+
+void PipelineManager::subscribe()
+{
+    m_pEventLoop->subscribe("next", [this](const std::shared_ptr<EventArgs>& eventArgs)
+    {
+        nextSlot(eventArgs);
     });
 
     m_pEventLoop->subscribe("error", [this](const std::shared_ptr<EventArgs>& eventArgs)
     {   
-        //dynamic_cast EventArgs to ErrorInfo
-        //log and communication with ErrorServer
+        errorSlot(eventArgs);
     });
 }
 
