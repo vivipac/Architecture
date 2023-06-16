@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <jsoncpp/json/json.h>
 
       
@@ -15,7 +16,7 @@ class PipelineController
 
     std::vector<std::string> getAllModules() const; 
 
-    private:
+    private:    
     std::string m_pipelineConfig;                                                                             
 };
 
