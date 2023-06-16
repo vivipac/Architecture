@@ -87,7 +87,7 @@ bool Timer::isTimerActivated() const
 
 void Timer::removeWatchFromEventLoop()
 {
-    m_eventLoop.removeWatchFromEventLoop( m_fd );
+    m_eventLoop.removeWatchFromEventLoop( Watch(m_fd, nullptr) );
 }
 
 

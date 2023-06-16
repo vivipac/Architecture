@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "../Module/ModuleInfo.h"
 #include "../ModuleManager/ModuleManager.h"
 #include "../System/EventLoop.h"
 #include "../System/DefaultThreadPool.h"
@@ -31,7 +32,7 @@ class PipelineManager
     std::vector<std::string> m_moduleNameList;
     PipelineController m_pipelineController;
     ModuleManager m_moduleManager;
-    vivi::EventLoop m_eventLoop;
+    std::shared_ptr<vivi::EventLoop> m_pEventLoop;
     Frontmatec::Libs::Common::DefaultThreadPool m_threadpool;
                                                                               
 };

@@ -1,6 +1,7 @@
 #include "PipelineManager.h"
 
-PipelineManager::PipelineManager()
+PipelineManager::PipelineManager():
+    m_pEventLoop( new vivi::EventLoop )
 {
     m_moduleNameList = m_pipelineController.getAllModules();
 }
@@ -12,24 +13,29 @@ void PipelineManager::componentsInitialization()
 
 void PipelineManager::subscribe()
 {
-    m_eventLoop.subscribe("next", [this](const std::shared_ptr<EventArgs>& eventArgs)
+    m_pEventLoop->subscribe("next", [this](const std::shared_ptr<EventArgs>& eventArgs)
     {
-        //dynamic_cast EventArgs to ModuleInfo
-        std::string moduleName;
-        //moduleName = moduleInfo.moduleName()
-        std::vector<std::string> modules = m_pipelineController.whoAreNext( moduleName );
-
-        for(const auto & module: modules)
+        std::shared_ptr<ModuleInfo> moduleInfo = std::dynamic_pointer_cast<ModuleInfo>(eventArgs);
+        if( moduleInfo != nullptr)
         {
-            ModuleLoader::ModulePtr pModule = m_moduleManager.getModule( module );
-            m_threadpool.add_task( [&pModule, eventArgs](){
-                pModule->run(eventArgs);
-            });
-        }
+            const std::string& moduleName = moduleInfo->m_moduleName;
+            const std::vector<std::string> modules = m_pipelineController.whoAreNext( moduleName );
 
+            for(const auto & module: modules)
+            {
+                ModuleLoader::ModulePtr pModule = m_moduleManager.getModule( module );
+                m_threadpool.add_task( [pModule, eventArgs](){
+                    pModule->run(eventArgs);
+                });
+            }
+        }
+        else
+        {
+            //error
+        }        
     });
 
-    m_eventLoop.subscribe("error", [this](const std::shared_ptr<EventArgs>& eventArgs)
+    m_pEventLoop->subscribe("error", [this](const std::shared_ptr<EventArgs>& eventArgs)
     {   
         //dynamic_cast EventArgs to ErrorInfo
         //log and communication with ErrorServer
@@ -49,7 +55,7 @@ void PipelineManager::initModules()
     for(const auto & moduleName: m_moduleNameList)
     {
         ModuleLoader::ModulePtr pModule = m_moduleManager.getModule(moduleName);
-        pModule->init(m_eventLoop);
+        pModule->init(m_pEventLoop);
     }
 }
 
@@ -60,5 +66,5 @@ void PipelineManager::configureModules()
 
 void PipelineManager::startPipeline()
 {
-    m_eventLoop.runEventLoop();
+    m_pEventLoop->runEventLoop();
 }
