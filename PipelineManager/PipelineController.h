@@ -10,14 +10,15 @@
 class PipelineController
 {
     public:
-    PipelineController(const std::string& pipelineConfig = "/opt/fm/etc/pipeline.json");
+    PipelineController(const std::string& pipelineConfig);
        
     std::vector<std::string> whoAreNext(const std::string& moduleName) const;
 
     std::vector<std::string> getAllModules() const; 
 
     private:    
-    std::string m_pipelineConfig;                                                                             
+    std::string m_pipelineConfig;      
+    Json::Value m_jsonRoot;                                                                       
 };
 
 

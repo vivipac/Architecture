@@ -1,7 +1,7 @@
 #include "ModuleLoader.h"
 #include "errno.h"
 #include "cstring"
-
+#include <iostream>
 //TODO see again the std::string, may be adding __LINE__ __FUNCTION__
 
 ModuleLoader::ModuleLoader()
@@ -20,14 +20,14 @@ void ModuleLoader::unload(const std::string& filename)
 }
 
 ModuleLoader::ModulePtr ModuleLoader::load(const std::string& filename)
-{
+{    
     char* error = nullptr;
-    void* handle = ::dlopen(filename.c_str(), RTLD_NOW);
-    if (!handle) {  
+    void* handle = ::dlopen(filename.c_str(), RTLD_NOW);    
+    if (!handle) {          
         error = ::dlerror();      
-        throw std::string( error );
+        throw std::string( "nique ta mere " + std::string(error) );
     }    
-
+    
     Module* (*loader) (void) = reinterpret_cast<Module* (*) (void)>( ::dlsym(handle, "loader"));
 
     if (loader == nullptr) {
@@ -41,7 +41,7 @@ ModuleLoader::ModulePtr ModuleLoader::load(const std::string& filename)
         ::dlclose(handle);        
         throw std::string(  "error with operator new, " ) + ::strerror(errno) ;
     }
-
+    
     m_filename_handle_map[filename] = handle;
 
     return ModulePtr(module);

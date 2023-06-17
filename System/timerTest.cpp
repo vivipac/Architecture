@@ -2,32 +2,32 @@
 
 #include "Timer.h"
 
-int main(int argc, char const *argv[])
-{
+// int main(int argc, char const *argv[])clear
+// {
     
     
-    vivi::EventLoop loop;
-    vivi::Timer timer(2, loop);
+//     // vivi::EventLoop loop;
+//     // vivi::Timer timer(2, loop);
     
 
-    int count = 0;
-    std::function<void (void)> callback = [&](void){
+//     // int count = 0;
+//     // std::function<void (void)> callback = [&](void){
 
-        count ++;
-        std::cout << "timeout ! count = " << count << std::endl;
+//     //     count ++;
+//     //     std::cout << "timeout ! count = " << count << std::endl;
 
-        if( count > 5 )
-        {
-            timer.stop();
-        }
-    };
+//     //     if( count > 5 )
+//     //     {
+//     //         timer.stop();
+//     //     }
+//     // };
 
-    timer.addWatchToEventLoop( callback);
+//     // timer.addWatchToEventLoop( callback);
 
-    timer.start();
+//     // timer.start();
 
-    loop.runEventLoop( );
+//     // loop.runEventLoop( );
 
 
-    return 0;
-}
+//     return 0;
+// }

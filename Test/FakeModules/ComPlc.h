@@ -9,7 +9,7 @@
 #include "../../System/EventArgs.h"
 #include "../../System/EventLoop.h"
 
-//to create module.so : g++ -c -fpic ComPlc.cpp $(pkg-config --cflags --libs opencv4)&& g++ -shared ComPlc.o -o ComPlc.so && rm ComPlc.o
+//to create module.so : g++ -fpic -shared ComPlc.cpp ../../Module/ModuleInfo.cpp ../../System/*.cpp  $(pkg-config --cflags --libs opencv4) -o ComPlc.so
     
 
 class ComPlc : public Module

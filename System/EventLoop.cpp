@@ -98,9 +98,7 @@ void EventLoop::eventNotify()
     ::read(m_eventFd, &eventFdRequest, sizeof(uint64_t));
     
     if( m_state & static_cast<uint64_t>(EventLoop::EventState::QUEUE_READY))
-    {
-        std::cout << "pop queue list"  << std::endl;
-
+    {        
         m_state &= ~ (static_cast<uint64_t>(EventLoop::EventState::QUEUE_READY));
 
         while( m_queue.size() > 0 )
@@ -151,7 +149,8 @@ bool EventLoop::runEventLoop(bool isThread)
 {
     if( isThread )
     {
-        std::thread( &EventLoop::run, this);
+        std::thread t( &EventLoop::run, this); //TODO dans le destructeur il faut tuer ce thread
+        t.detach();
     }
     else{
         run();

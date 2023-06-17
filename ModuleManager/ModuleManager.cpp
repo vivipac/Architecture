@@ -1,6 +1,6 @@
 #include "ModuleManager.h"
 
-ModuleManager::ModuleManager(const std::string& modulesPath = "/opt/fm/lib/modules"):
+ModuleManager::ModuleManager(const std::string& modulesPath):
     m_modulesPath(modulesPath)
 {
 
@@ -8,8 +8,18 @@ ModuleManager::ModuleManager(const std::string& modulesPath = "/opt/fm/lib/modul
        
 void ModuleManager::addModule (const std::string& moduleName)
 {
-    ModuleLoader::ModulePtr module = m_moduleLoader.load( m_modulesPath + "/" + moduleName);
-    m_modules.push_back(std::make_pair(moduleName, nullptr));
+    ModuleLoader::ModulePtr module = nullptr;
+    try
+    {
+        module = m_moduleLoader.load( m_modulesPath + "/" + moduleName + ".so");        
+    }
+    catch(const std::string& error)
+    {
+        std::cerr << error << '\n';
+        ::exit(EXIT_FAILURE);
+    }
+    
+    m_modules.push_back(std::make_pair(moduleName, module));
 }
 
 void ModuleManager::delModule (const std::string& moduleName)
@@ -31,14 +41,14 @@ void ModuleManager::delModule (const std::string& moduleName)
 ModuleLoader::ModulePtr ModuleManager::getModule(const std::string& moduleName)
 {
     auto module = std::find_if(m_modules.begin(), m_modules.end(), [&moduleName](const std::pair<std::string, ModuleLoader::ModulePtr>& pair)
-    {
+    {        
         return pair.first == moduleName;
     });
 
     if( module != m_modules.end())
-    {
+    {        
         return module->second;
-    }
+    }    
 
-    return nullptr;
+    throw std::string(moduleName + " not exists");
 }

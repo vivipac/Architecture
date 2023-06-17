@@ -12,7 +12,7 @@
 class ModuleManager
 {
     public:
-    ModuleManager(const std::string& modulesPath = "/opt/fm/lib/modules");
+    ModuleManager(const std::string& modulesPath);
        
     void addModule (const std::string& moduleName);
 

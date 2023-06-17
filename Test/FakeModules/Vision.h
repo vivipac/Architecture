@@ -10,7 +10,7 @@
 #include "../../System/EventLoop.h"
      
 
-//to create module.so : g++ -c -fpic Vision.cpp $(pkg-config --cflags --libs opencv4)&& g++ -shared Vision.o -o Vision.so && rm Vision.o
+//to create module.so : g++ -fpic -shared Vision.cpp ../../Module/ModuleInfo.cpp ../../System/*.cpp  $(pkg-config --cflags --libs opencv4) -o Vision.so
 
 class Vision : public Module
 {

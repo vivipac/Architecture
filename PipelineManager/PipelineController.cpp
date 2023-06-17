@@ -1,20 +1,21 @@
 #include "PipelineController.h"
 #include <fstream>
-
+#include <iostream>
 PipelineController::PipelineController(const std::string& pipelineConfig): 
     m_pipelineConfig(pipelineConfig)
 {
-    
+    std::ifstream file(m_pipelineConfig);//tester si on trouve le fichier
+    if ( !file.good()) 
+        throw std::string(pipelineConfig + " error format");
+  
+    file >> m_jsonRoot;
 }
        
 std::vector<std::string> PipelineController::whoAreNext(const std::string& moduleName) const //TODO optimize this shit
 {
-    std::vector<std::string> moduleNameList;
-    std::ifstream file(m_pipelineConfig);
-    Json::Value root;
-    file >> root;
+    std::vector<std::string> moduleNameList;  
 
-    for (const auto& module : root)
+    for (const auto& module : m_jsonRoot)
     {
         std::string currentModuleName = module["module_name"].asString();
         Json::Value inputs = module["input"];
@@ -38,14 +39,11 @@ std::vector<std::string> PipelineController::whoAreNext(const std::string& modul
 std::vector<std::string> PipelineController::getAllModules() const
 {
     std::vector<std::string> moduleNameList;
-    std::ifstream file(m_pipelineConfig); 
-    Json::Value root;
-    file >> root;
 
-    for (const auto& module : root)
+    for (const auto& module : m_jsonRoot)
     {
         std::string moduleName = module["module_name"].asString();
-        moduleNameList.push_back(moduleName);
+        moduleNameList.push_back(moduleName);        
     }
     return moduleNameList;
 }

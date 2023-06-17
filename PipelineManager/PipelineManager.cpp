@@ -5,7 +5,7 @@ PipelineManager::PipelineManager():
     m_moduleManager("./Modules"),
     m_pEventLoop( new vivi::EventLoop )
 {
-    m_moduleNameList = m_pipelineController.getAllModules();
+    m_moduleNameList = m_pipelineController.getAllModules();    
 }
 
 void PipelineManager::componentsInitialization()
@@ -20,18 +20,29 @@ void PipelineManager::errorSlot(const std::shared_ptr<EventArgs>& eventArgs)
 }
 
 void PipelineManager::nextSlot(const std::shared_ptr<EventArgs>& eventArgs)
-{
+{    
     if( eventArgs )
     {
         std::shared_ptr<ModuleInfo> moduleInfo = std::dynamic_pointer_cast<ModuleInfo>(eventArgs);
         if( moduleInfo != nullptr)
         {
-            const std::string& moduleName = moduleInfo->m_moduleName;
+            const std::string& moduleName = moduleInfo->m_moduleName;            
+
             const std::vector<std::string> modules = m_pipelineController.whoAreNext( moduleName );
 
+            ModuleLoader::ModulePtr pModule = nullptr;
             for(const auto & module: modules)
-            {
-                ModuleLoader::ModulePtr pModule = m_moduleManager.getModule( module );
+            {                                                
+                try
+                {
+                    pModule = m_moduleManager.getModule(module);    
+                }
+                catch(const std::string& error)
+                {
+                    std::cerr << error << '\n';
+                    ::exit(EXIT_FAILURE);
+                }
+
                 m_threadpool.add_task( [pModule, eventArgs](){
                     pModule->run(eventArgs);
                 });
@@ -60,7 +71,8 @@ void PipelineManager::subscribe()
 void PipelineManager::loadModules()
 {    
     for(const auto & moduleName: m_moduleNameList)
-    {
+    {      
+        std::cout << "we load Module " << moduleName << std::endl;  
         m_moduleManager.addModule(moduleName);
     }
 }
@@ -68,8 +80,17 @@ void PipelineManager::loadModules()
 void PipelineManager::initModules()
 {
     for(const auto & moduleName: m_moduleNameList)
-    {
-        ModuleLoader::ModulePtr pModule = m_moduleManager.getModule(moduleName);
+    {        
+        ModuleLoader::ModulePtr pModule = nullptr;
+        try
+        {
+            pModule = m_moduleManager.getModule(moduleName);    
+        }
+        catch(const std::string& error)
+        {
+            std::cerr << error << '\n';
+            ::exit(EXIT_FAILURE);
+        }                    
         pModule->init(m_pEventLoop);
     }
 }

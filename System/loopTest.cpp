@@ -25,28 +25,28 @@ class Test{
     void * m_args[2];
 };
 
-int main(int argc, char const *argv[])
-{
+// int main(int argc, char const *argv[])
+// {
        
-    vivi::EventLoop loop;
+//     vivi::EventLoop loop;
 
-    loop.subscribe("next", [](const std::shared_ptr<EventArgs>& eventArgs){
-        //we convert EventArgs to ModuleInfo
-        //we get moduleName from moduleInfo
-        //we put moduleName in m_moduleManager.whoAreNext( moduleName )
-        // ... (read documentation newArchi)
-        // threadpool ...
-        std::cout << "signal next received, owner = " << ", null ? = " << (eventArgs != nullptr) << std::endl;
-    });
+//     loop.subscribe("next", [](const std::shared_ptr<EventArgs>& eventArgs){
+//         //we convert EventArgs to ModuleInfo
+//         //we get moduleName from moduleInfo
+//         //we put moduleName in m_moduleManager.whoAreNext( moduleName )
+//         // ... (read documentation newArchi)
+//         // threadpool ...
+//         std::cout << "signal next received, owner = " << ", null ? = " << (eventArgs != nullptr) << std::endl;
+//     });
 
 
-    Test test(loop);  
+//     Test test(loop);  
 
-    vivi::Watch w( 0, &test, &Test::publish);
+//     vivi::Watch w( 0, &test, &Test::publish);
 
-    loop.addWatchToEventLoop( w );
+//     loop.addWatchToEventLoop( w );
 
-    loop.publish("coco");
+//     loop.publish("coco");
 
-    return loop.runEventLoop();
-}
+//     return loop.runEventLoop();
+// }
