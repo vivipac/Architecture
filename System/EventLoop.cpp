@@ -11,7 +11,7 @@ namespace vivi
 {
 
 EventLoop::EventLoop(): 
-    m_fds(NULL),
+    m_fds(nullptr),
     m_fdsCount(0),
     m_eventFd(-1),
     m_exitEventLoop( false ),

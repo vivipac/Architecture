@@ -4,11 +4,21 @@
 PipelineController::PipelineController(const std::string& pipelineConfig): 
     m_pipelineConfig(pipelineConfig)
 {
-    std::ifstream file(m_pipelineConfig);//tester si on trouve le fichier
-    if ( !file.good()) 
-        throw std::string(pipelineConfig + " error format");
-  
-    file >> m_jsonRoot;
+    try 
+    {
+        std::ifstream file(m_pipelineConfig);
+        file >> m_jsonRoot;        
+    } 
+    catch (const std::ifstream::failure& e) 
+    {
+        std::cerr << "Failed to open or read the file: " << e.what() << std::endl;
+        ::exit(EXIT_FAILURE);
+    } 
+    catch (const std::exception& e) 
+    {
+        std::cerr << "An error occurred while parsing the JSON: " << e.what() << std::endl;
+        ::exit(EXIT_FAILURE);
+    }
 }
        
 std::vector<std::string> PipelineController::whoAreNext(const std::string& moduleName) const //TODO optimize this shit

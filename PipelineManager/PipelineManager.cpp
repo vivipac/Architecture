@@ -4,8 +4,7 @@ PipelineManager::PipelineManager():
     m_pipelineController("./pipeline.json"),
     m_moduleManager("./Modules"),
     m_pEventLoop( new vivi::EventLoop )
-{
-    m_moduleNameList = m_pipelineController.getAllModules();    
+{    
 }
 
 void PipelineManager::componentsInitialization()
@@ -32,7 +31,7 @@ void PipelineManager::nextSlot(const std::shared_ptr<EventArgs>& eventArgs)
 
             ModuleLoader::ModulePtr pModule = nullptr;
             for(const auto & module: modules)
-            {                                                
+            {                     
                 try
                 {
                     pModule = m_moduleManager.getModule(module);    
@@ -70,7 +69,7 @@ void PipelineManager::subscribe()
 
 void PipelineManager::loadModules()
 {    
-    for(const auto & moduleName: m_moduleNameList)
+    for(const auto & moduleName: m_pipelineController.getAllModules())
     {      
         std::cout << "we load Module " << moduleName << std::endl;  
         m_moduleManager.addModule(moduleName);
@@ -79,7 +78,7 @@ void PipelineManager::loadModules()
 
 void PipelineManager::initModules()
 {
-    for(const auto & moduleName: m_moduleNameList)
+    for(const auto & moduleName: m_pipelineController.getAllModules())
     {        
         ModuleLoader::ModulePtr pModule = nullptr;
         try

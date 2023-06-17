@@ -32,8 +32,7 @@ class PipelineManager
     void nextSlot(const std::shared_ptr<EventArgs>& eventArgs);
 
     void errorSlot(const std::shared_ptr<EventArgs>& eventArgs);    
-
-    std::vector<std::string> m_moduleNameList;
+    
     PipelineController m_pipelineController;
     ModuleManager m_moduleManager;
     std::shared_ptr<vivi::EventLoop> m_pEventLoop;
