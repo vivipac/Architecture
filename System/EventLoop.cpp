@@ -15,15 +15,19 @@ EventLoop::EventLoop():
     m_fdsCount(0),
     m_eventFd(-1),
     m_exitEventLoop( false ),
-    m_state(static_cast<uint64_t>(EventLoop::EventState::NONE))
+    m_state(static_cast<uint8_t>(EventLoop::EventState::NONE))
 {    
 
     if ( (m_eventFd = eventfd(static_cast<unsigned long>(0), 0)) < 0) 
     {
-        std::cout << "timerfd_create error : " << strerror(errno) << std::endl;
-        return ;
+        std::cerr << "timerfd_create error : " << std::strerror(errno) << "\n";
+        ::exit(EXIT_FAILURE);
     }
-    Watch w (m_eventFd, std::bind(&EventLoop::eventNotify, this)); //TODO mettre une lambda
+    
+    Watch w (m_eventFd, [this](){
+        eventNotify();
+    }); 
+    
     addWatchToEventLoop( w );
     
 }
@@ -78,13 +82,14 @@ void EventLoop::watchNotify(int fd)
         if( watch.fd() == fd)
         {
             watch.callback();   
-            if( !watch.needData() )   //on vide le buffer, TODO : il y a un syscall qui fait ca      
+            if( !watch.needData() )    
             {
+                // discard the buffer
                 char bufferDump[1024];
                 
                 int readData;
                 do{
-                    readData = read(watch.fd(), bufferDump, 1024);
+                    readData = ::read(watch.fd(), bufferDump, 1024);
                 }while( readData >= 1024);
                 
             }
@@ -97,9 +102,9 @@ void EventLoop::eventNotify()
     uint64_t eventFdRequest = 1;
     ::read(m_eventFd, &eventFdRequest, sizeof(uint64_t));
     
-    if( m_state & static_cast<uint64_t>(EventLoop::EventState::QUEUE_READY))
+    if( m_state & static_cast<uint8_t>(EventLoop::EventState::QUEUE_READY))
     {        
-        m_state &= ~ (static_cast<uint64_t>(EventLoop::EventState::QUEUE_READY));
+        m_state &= ~ (static_cast<uint8_t>(EventLoop::EventState::QUEUE_READY));
 
         while( m_queue.size() > 0 )
         {
@@ -110,23 +115,23 @@ void EventLoop::eventNotify()
 
         } 
     }
-    if(m_state & static_cast<uint64_t>(EventLoop::EventState::FD_LIST_MODIFIED))
+    if(m_state & static_cast<uint8_t>(EventLoop::EventState::FD_LIST_MODIFIED))
     {
         std::cout << "update fd list "  << std::endl;
-        m_state &= ~ static_cast<uint64_t>(EventLoop::EventState::FD_LIST_MODIFIED);
+        m_state &= ~ static_cast<uint8_t>(EventLoop::EventState::FD_LIST_MODIFIED);
     }
 
-    if(m_state & static_cast<uint64_t>(EventLoop::EventState::QUIT_EVENT_LOOP))
+    if(m_state & static_cast<uint8_t>(EventLoop::EventState::QUIT_EVENT_LOOP))
     {
         std::cout << "quit event loop "  << std::endl;
-        m_state &= ~ static_cast<uint64_t>(EventLoop::EventState::QUIT_EVENT_LOOP);
+        m_state &= ~ static_cast<uint8_t>(EventLoop::EventState::QUIT_EVENT_LOOP);
 
         m_exitEventLoop = true;
     }      
     
 }
 
-void EventLoop::run(){ //TODO adapter avec ce que l'on veut faire sur le schema de l archi
+void EventLoop::run(){ 
 
     while(!m_exitEventLoop)
     {        
@@ -149,8 +154,7 @@ bool EventLoop::runEventLoop(bool isThread)
 {
     if( isThread )
     {
-        std::thread t( &EventLoop::run, this); //TODO dans le destructeur il faut tuer ce thread
-        t.detach();
+        std::thread( &EventLoop::run, this).detach(); //TODO dans le destructeur il faut tuer ce thread        
     }
     else{
         run();
@@ -161,7 +165,7 @@ bool EventLoop::runEventLoop(bool isThread)
 
 void EventLoop::notify(const EventLoop::EventState state)
 {
-    m_state |= static_cast<uint64_t>(state);
+    m_state |= static_cast<uint8_t>(state);
     uint64_t eventFdRequest = 1;
     ::write(m_eventFd, &eventFdRequest, sizeof(uint64_t));  
 }

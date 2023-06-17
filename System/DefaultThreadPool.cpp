@@ -64,7 +64,6 @@ namespace Frontmatec {
                     task();
                 }
             }
-
         }
     }
 }

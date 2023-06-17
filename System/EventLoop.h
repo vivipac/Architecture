@@ -4,17 +4,17 @@
 #include <iostream>
 #include <functional>
 #include <vector>
+#include <cstring>
 #include <poll.h>
-#include <stdlib.h>
-#include <string.h>
 #include <algorithm>
 #include <unistd.h>
-#include <map>
-#include <unordered_map>
 #include <sys/eventfd.h>
+#include <sys/ioctl.h>
 #include <thread> 
 #include <queue>
 #include <memory>
+#include <atomic>
+#include <mutex>
 
 #include "Watch.h"
 #include "EventArgs.h"
@@ -24,11 +24,11 @@ namespace vivi
 
 class EventLoop
 {
-    enum class EventState : uint64_t { //TODO unit8_t ??
+    enum class EventState : uint8_t {
         NONE                = 0,
-        FD_LIST_MODIFIED    = static_cast<uint64_t>( 0x01 << 0),
-        QUEUE_READY         = static_cast<uint64_t>( 0x01 << 1),
-        QUIT_EVENT_LOOP     = static_cast<uint64_t>( 0x01 << 2)
+        FD_LIST_MODIFIED    = static_cast<uint8_t>( 0x01 << 0),
+        QUEUE_READY         = static_cast<uint8_t>( 0x01 << 1),
+        QUIT_EVENT_LOOP     = static_cast<uint8_t>( 0x01 << 2)
     };
 
     struct Slot{                
@@ -43,13 +43,12 @@ class EventLoop
     public:
         EventLoop();
 
-        bool addWatchToEventLoop( const Watch & watch);
+        bool addWatchToEventLoop( const Watch& watch);
 
-        bool removeWatchFromEventLoop( const Watch & watch );
+        bool removeWatchFromEventLoop( const Watch& watch );
 
         bool runEventLoop(bool isThread = false);
-
-        //TODO strange name, using rather than subscrib and publish ?
+        
         void subscribe(const std::string& signal, std::function<void (const std::shared_ptr<EventArgs>& eventArgs)> slot);
 
         void publish(const std::string& signal, const std::shared_ptr<EventArgs>& eventArgs = nullptr);            
@@ -64,9 +63,10 @@ class EventLoop
 
         void notify(const EventLoop::EventState state);
         
-        bool m_exitEventLoop; 
+        std::atomic<bool> m_exitEventLoop; 
+        std::mutex m_mutex;
 
-        struct pollfd *m_fds; //TODO use epoll : more efectively
+        struct pollfd *m_fds;
         size_t m_fdsCount;
         int m_eventFd ;
 
@@ -80,7 +80,7 @@ class EventLoop
         std::queue< EventLoop::Slot > m_queue; 
 
         //donne l'état des evenements
-        uint64_t m_state;
+        uint8_t m_state;
 };
 
 }

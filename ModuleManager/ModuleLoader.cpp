@@ -2,7 +2,6 @@
 #include "errno.h"
 #include "cstring"
 #include <iostream>
-//TODO see again the std::string, may be adding __LINE__ __FUNCTION__
 
 ModuleLoader::ModuleLoader()
 {}
@@ -25,7 +24,7 @@ ModuleLoader::ModulePtr ModuleLoader::load(const std::string& filename)
     void* handle = ::dlopen(filename.c_str(), RTLD_NOW);    
     if (!handle) {          
         error = ::dlerror();      
-        throw std::string( "nique ta mere " + std::string(error) );
+        throw std::string(error);
     }    
     
     Module* (*loader) (void) = reinterpret_cast<Module* (*) (void)>( ::dlsym(handle, "loader"));
