@@ -11,6 +11,8 @@ class PipelineController
 {
     public:
     PipelineController(const std::string& pipelineConfig);
+
+    void checkConsistentPipeline() const;
        
     std::vector<std::string> whoAreNext(const std::string& moduleName) const;
 

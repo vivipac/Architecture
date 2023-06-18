@@ -1,6 +1,7 @@
 #include "PipelineController.h"
 #include <fstream>
 #include <iostream>
+
 PipelineController::PipelineController(const std::string& pipelineConfig): 
     m_pipelineConfig(pipelineConfig)
 {
@@ -19,6 +20,21 @@ PipelineController::PipelineController(const std::string& pipelineConfig):
         std::cerr << "An error occurred while parsing the JSON: " << e.what() << std::endl;
         ::exit(EXIT_FAILURE);
     }
+
+    try
+    {
+        checkConsistentPipeline(); 
+    }
+    catch(const std::string& error)
+    {
+        std::cerr << error << std::endl;
+        ::exit(EXIT_FAILURE);
+    }
+}
+
+void PipelineController::checkConsistentPipeline() const
+{
+    //TODO check if input and output are consistents, throw std::string("error in pipeline.json in ligne xxx")
 }
        
 std::vector<std::string> PipelineController::whoAreNext(const std::string& moduleName) const //TODO optimize this shit
@@ -46,7 +62,7 @@ std::vector<std::string> PipelineController::whoAreNext(const std::string& modul
     return moduleNameList;
 }
 
-std::vector<std::string> PipelineController::getAllModules() const
+std::vector<std::string> PipelineController::getAllModules() const 
 {
     std::vector<std::string> moduleNameList;
 
