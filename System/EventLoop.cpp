@@ -15,19 +15,23 @@ EventLoop::EventLoop():
     m_exitEventLoop( false ),
     m_state(static_cast<uint8_t>(EventLoop::EventState::NONE))
 {    
-
-    if ( (m_eventFd = eventfd(static_cast<unsigned long>(0), 0)) < 0) 
+    //init events notifier 
+    if ( (m_eventFd = ::eventfd(static_cast<unsigned long>(0), 0)) < 0) 
     {
-        std::cerr << "timerfd_create error : " << std::strerror(errno) << "\n";
+        std::cerr << "eventfd syscall error : " << std::strerror(errno) << "\n";
         ::exit(EXIT_FAILURE);
     }
     
     Watch w (m_eventFd, [this](){
         eventNotify();
     }); 
-    
-    addWatchToEventLoop( w );
-    
+    m_watchList.push_back(w);
+
+    m_fds = static_cast<struct pollfd*> ( ::malloc( sizeof( struct pollfd) ) );
+    m_fds[m_fdsCount].fd = m_eventFd;
+    m_fds[m_fdsCount].events = POLLIN | POLLHUP | POLLERR ;
+
+    m_fdsCount++;    
 }
 
 EventLoop::~EventLoop()
@@ -60,64 +64,73 @@ bool EventLoop::addWatchToEventLoop( const ::vivi::Watch& watch)
     std::lock_guard<std::mutex> lock(m_mutex);
     m_watchToAdd.push_back(watch);
     
-    notify(EventLoop::EventState::FD_LIST_MODIFIED);
-
+    notify(EventLoop::EventState::FD_LIST_MODIFIED);    
     return true; 
 }
 
-void EventLoop::updatePool() //TODO : to optimize (with std::alogithm ?)
-{
+void EventLoop::updatePool() 
+{    
     std::lock_guard<std::mutex> lock(m_mutex);     
 
+    struct pollfd* tmp = m_fds;
+
     //add watch
-    struct pollfd* tmp = static_cast<struct pollfd * > ( ::malloc( sizeof( struct pollfd) * (m_fdsCount + m_watchToAdd.size()) ) );
-
-    ::memcpy(tmp, m_fds, m_fdsCount * sizeof( struct pollfd));
-    
-    for(const auto& watch : m_watchToAdd)
+    if(!m_watchToAdd.empty())
     {
-        tmp[m_fdsCount].fd = watch.fd();
-        tmp[m_fdsCount].events = POLLIN | POLLHUP | POLLERR ;
+        tmp = static_cast<struct pollfd*> ( ::malloc( sizeof( struct pollfd) * (m_fdsCount + m_watchToAdd.size()) ) );
 
-        m_watchList.push_back( watch );
-
-        m_fdsCount++;
-    }
-
-    //delete Watch     
-    struct pollfd* tmp2 = static_cast<struct pollfd * > ( ::malloc( sizeof( struct pollfd) * (m_fdsCount - m_watchToDel.size()) ) );    
+        ::memcpy(tmp, m_fds, m_fdsCount * sizeof( struct pollfd));
         
-    for (size_t i = 0; i < m_fdsCount; i++)
-    {
-        bool adding = true;
-        for(const auto& watch : m_watchToDel)
+        for(const auto& watch : m_watchToAdd)
         {
-            if( tmp[i].fd == watch.fd())
-            {                
-                adding = false;
-                break;
-            }                
-        }
-        if(adding)
-        {
-            tmp2[i].fd = tmp[i].fd;
-            tmp2[i].events = POLLIN | POLLHUP | POLLERR ;
-        }        
-    }  
+            tmp[m_fdsCount].fd = watch.fd();
+            tmp[m_fdsCount].events = POLLIN | POLLHUP | POLLERR ;
 
-    for(auto it = m_watchList.begin(); it != m_watchList.end(); ++it)
+            m_watchList.push_back( watch );
+
+            m_fdsCount++;
+        }
+    }    
+
+    //delete Watch
+    if(!m_watchToDel.empty())    
     {
-        for(const auto & watch: m_watchToDel)
+        struct pollfd* tmp2 = static_cast<struct pollfd*> ( ::malloc( sizeof( struct pollfd) * (m_fdsCount - m_watchToDel.size()) ) );    
+        
+        for (size_t i = 0; i < m_fdsCount; i++)
         {
-            if( watch.fd() == it->fd())
+            bool adding = true;
+            for(const auto& watch : m_watchToDel)
             {
-                it = m_watchList.erase(it);
+                if( tmp[i].fd == watch.fd())
+                {                
+                    adding = false;
+                    break;
+                }                
+            }
+            if(adding)
+            {
+                tmp2[i].fd = tmp[i].fd;
+                tmp2[i].events = POLLIN | POLLHUP | POLLERR ;
+            }        
+        }  
+
+        for(auto it = m_watchList.begin(); it != m_watchList.end(); ++it)
+        {
+            for(const auto & watch: m_watchToDel)
+            {
+                if( watch.fd() == it->fd())
+                {
+                    it = m_watchList.erase(it);
+                }
             }
         }
-    }            
 
+        tmp = tmp2;
+    }    
+                
     ::free(m_fds);
-    m_fds = tmp2;
+    m_fds = tmp;
 }
 
 void EventLoop::watchNotify(int fd)
@@ -142,7 +155,7 @@ void EventLoop::watchNotify(int fd)
     }    
 }
 
-void EventLoop::eventNotify()
+void EventLoop::eventNotify() 
 {  
     std::queue<EventLoop::Slot> slots; 
     {    
@@ -176,7 +189,7 @@ void EventLoop::eventNotify()
     {                    
         auto slot = slots.front(); 
         slots.pop();                                                   
-        slot.m_callback( slot.m_eventArgs);
+        slot.m_callback(slot.m_eventArgs);
     }      
     
 }
@@ -185,7 +198,7 @@ void EventLoop::run(){
 
     while(!m_exitEventLoop)
     {        
-        int nEvents = poll( m_fds, m_fdsCount, -1);
+        int nEvents = ::poll( m_fds, m_fdsCount, -1);
         
         for (size_t i = 0; (i < m_fdsCount) || (nEvents > 0) ; i++)
         {

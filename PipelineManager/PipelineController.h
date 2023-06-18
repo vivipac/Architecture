@@ -19,7 +19,7 @@ class PipelineController
     std::vector<std::string> getAllModules() const; 
 
     private:    
-    std::string m_pipelineConfig;      
+    const std::string m_pipelineConfig;      
     Json::Value m_jsonRoot;                                                                       
 };
 

@@ -11,7 +11,7 @@ const std::string& ComPlc::className()
     return m_className;
 }      
 
-void ComPlc::init(const Module::EventLoopPtr& eventLoop) 
+void ComPlc::init(const Module::Ptr& eventLoop) 
 {
     m_eventLoopToPublish = eventLoop;
 } 

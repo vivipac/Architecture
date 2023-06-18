@@ -22,7 +22,7 @@ void PipelineManager::nextSlot(const std::shared_ptr<EventArgs>& eventArgs)
 {    
     if( eventArgs )
     {
-        std::shared_ptr<ModuleInfo> moduleInfo = std::dynamic_pointer_cast<ModuleInfo>(eventArgs);
+        std::shared_ptr<ModuleInfo> moduleInfo = std::dynamic_pointer_cast<ModuleInfo>(eventArgs); 
         if( moduleInfo != nullptr)
         {
             const std::string& moduleName = moduleInfo->m_moduleName;            

@@ -11,7 +11,7 @@ const std::string& Vision::className()
     return m_className;
 }      
 
-void Vision::init(const Module::EventLoopPtr& eventLoop) 
+void Vision::init(const Module::Ptr& eventLoop) 
 {
     m_eventLoopToPublish = eventLoop;
 } 

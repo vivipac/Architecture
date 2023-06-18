@@ -84,7 +84,7 @@ class EventLoop
         std::vector<Watch> m_watchToDel;
 
         //indique qu'il faut mettre à jour le poll des evenement
-        bool m_updatePool;
+        std::atomic<bool> m_updatePool;
 
         //contient la liste de tous les fd-callback en attente d'evenement
         std::vector<Watch> m_watchList;

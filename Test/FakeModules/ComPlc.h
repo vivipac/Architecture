@@ -21,7 +21,7 @@ class ComPlc : public Module
 
         const std::string& className() override;      
 
-        void init(const Module::EventLoopPtr& eventLoop) override;
+        void init(const Module::Ptr& eventLoop) override;
         
         void config(const Json::Value& config) override;
 
@@ -29,7 +29,7 @@ class ComPlc : public Module
 
     private:
     const std::string m_className;
-    Module::EventLoopPtr m_eventLoopToPublish;
+    Module::Ptr m_eventLoopToPublish;
                                                                                        
 };
 FRONTMATEC_MODULE(ComPlc);

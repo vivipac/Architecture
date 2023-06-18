@@ -10,7 +10,7 @@ const std::string& Acquisition::className()
     return m_className;
 }      
 
-void Acquisition::init(const Module::EventLoopPtr& eventLoop) 
+void Acquisition::init(const Module::Ptr& eventLoop) 
 {
     m_eventLoopToPublish = eventLoop;
 

@@ -21,7 +21,7 @@ class Acquisition : public Module
 
         const std::string& className() override;      
 
-        void init(const Module::EventLoopPtr& eventLoop) override;
+        void init(const Module::Ptr& eventLoop) override;
         
         void config(const Json::Value& config) override;
 
@@ -31,7 +31,7 @@ class Acquisition : public Module
     const std::string m_className;
     vivi::EventLoop m_eventLoop;
     vivi::Timer m_timer;
-    Module::EventLoopPtr m_eventLoopToPublish;
+    Module::Ptr m_eventLoopToPublish;
                                                                                        
 };
 FRONTMATEC_MODULE(Acquisition);

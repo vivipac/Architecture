@@ -13,12 +13,12 @@
 class Module
 {
     public:
-        using EventLoopPtr = std::shared_ptr<vivi::EventLoop>;
+        using Ptr = std::shared_ptr<vivi::EventLoop>;
         virtual ~Module() = default;  
 
         virtual const std::string& className() = 0;      
 
-        virtual void init(const EventLoopPtr& eventLoop) = 0;
+        virtual void init(const Ptr& eventLoop) = 0;
         
         virtual void config(const Json::Value& config) = 0;
 
