@@ -5,8 +5,6 @@
 #include <string.h>
 #include <errno.h>
 
-//TODO add mutex
-
 namespace vivi
 {
 
@@ -32,47 +30,94 @@ EventLoop::EventLoop():
     
 }
 
-bool EventLoop::removeWatchFromEventLoop( const Watch & watch )
+EventLoop::~EventLoop()
 {
-    struct pollfd * tmp = nullptr;
-    tmp = static_cast<struct pollfd * > ( ::malloc( sizeof( struct pollfd) * (m_fdsCount - 1) ) );
-
-    for (size_t i = 0; i < m_fdsCount; i++)
+    if( m_eventLoopThread.joinable())
     {
-        if( m_fds[i].fd != watch.fd() )
-        {
-            tmp[i] = m_fds[i];
-        }
-    }      
+        m_exitEventLoop = true;
+        m_eventLoopThread.join();
+    }
+}
 
-    ::free(m_fds);
-    m_fds = tmp;
+void EventLoop::killEventLoop()
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    notify( vivi::EventLoop::EventState::QUIT_EVENT_LOOP);
+}
 
+bool EventLoop::removeWatchFromEventLoop( const ::vivi::Watch& watch )
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_watchToDel.push_back(watch);
+    
     notify(EventLoop::EventState::FD_LIST_MODIFIED);
 
     return true; 
 }
 
-bool EventLoop::addWatchToEventLoop(  const ::vivi::Watch & watch)
-{
-    struct pollfd * tmp = nullptr;
-    tmp = static_cast<struct pollfd * > ( ::malloc( sizeof( struct pollfd) * (m_fdsCount + 1) ) );
-
-    ::memcpy(tmp, m_fds, m_fdsCount * sizeof( struct pollfd));
-        
-    tmp[m_fdsCount].fd = watch.fd();
-    tmp[m_fdsCount].events = POLLIN | POLLHUP | POLLERR ;
-
-    m_watchList.push_back( watch );
-
-    m_fdsCount++;
-
-    ::free(m_fds); //TODO possibilité de segfault avec le poll() 
-    m_fds = tmp;
-
+bool EventLoop::addWatchToEventLoop( const ::vivi::Watch& watch)
+{   
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_watchToAdd.push_back(watch);
+    
     notify(EventLoop::EventState::FD_LIST_MODIFIED);
 
     return true; 
+}
+
+void EventLoop::updatePool() //TODO : to optimize (with std::alogithm ?)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);     
+
+    //add watch
+    struct pollfd* tmp = static_cast<struct pollfd * > ( ::malloc( sizeof( struct pollfd) * (m_fdsCount + m_watchToAdd.size()) ) );
+
+    ::memcpy(tmp, m_fds, m_fdsCount * sizeof( struct pollfd));
+    
+    for(const auto& watch : m_watchToAdd)
+    {
+        tmp[m_fdsCount].fd = watch.fd();
+        tmp[m_fdsCount].events = POLLIN | POLLHUP | POLLERR ;
+
+        m_watchList.push_back( watch );
+
+        m_fdsCount++;
+    }
+
+    //delete Watch     
+    struct pollfd* tmp2 = static_cast<struct pollfd * > ( ::malloc( sizeof( struct pollfd) * (m_fdsCount - m_watchToDel.size()) ) );    
+        
+    for (size_t i = 0; i < m_fdsCount; i++)
+    {
+        bool adding = true;
+        for(const auto& watch : m_watchToDel)
+        {
+            if( tmp[i].fd == watch.fd())
+            {                
+                adding = false;
+                break;
+            }                
+        }
+        if(adding)
+        {
+            tmp2[i].fd = tmp[i].fd;
+            tmp2[i].events = POLLIN | POLLHUP | POLLERR ;
+        }        
+    }  
+
+    for(auto it = m_watchList.begin(); it != m_watchList.end(); ++it)
+    {
+        for(const auto & watch: m_watchToDel)
+        {
+            if( watch.fd() == it->fd())
+            {
+                it = m_watchList.erase(it);
+            }
+        }
+    }            
+
+    ::free(m_fds);
+    m_fds = tmp2;
 }
 
 void EventLoop::watchNotify(int fd)
@@ -93,40 +138,45 @@ void EventLoop::watchNotify(int fd)
                 }while( readData >= 1024);
                 
             }
-        }                   
+        }                           
     }    
 }
 
 void EventLoop::eventNotify()
-{    
-    uint64_t eventFdRequest = 1;
-    ::read(m_eventFd, &eventFdRequest, sizeof(uint64_t));
-    
-    if( m_state & static_cast<uint8_t>(EventLoop::EventState::QUEUE_READY))
-    {        
-        m_state &= ~ (static_cast<uint8_t>(EventLoop::EventState::QUEUE_READY));
+{  
+    std::queue<EventLoop::Slot> slots; 
+    {    
+        std::lock_guard<std::mutex> lock(m_mutex);
 
-        while( m_queue.size() > 0 )
+        uint64_t eventFdRequest = 1;
+        ::read(m_eventFd, &eventFdRequest, sizeof(uint64_t));        
+        
+        if( m_state & static_cast<uint8_t>(EventLoop::EventState::QUEUE_READY))
+        {               
+            m_state &= ~static_cast<uint8_t>(EventLoop::EventState::QUEUE_READY);   
+
+            slots.swap(m_queue);        
+        }
+        if(m_state & static_cast<uint8_t>(EventLoop::EventState::FD_LIST_MODIFIED))
         {
-            auto queue = m_queue.front(); 
-            m_queue.pop();                
+            m_state &= ~static_cast<uint8_t>(EventLoop::EventState::FD_LIST_MODIFIED);
 
-            queue.m_callback( queue.m_eventArgs);
+            m_updatePool = true;                
+        }
 
+        if(m_state & static_cast<uint8_t>(EventLoop::EventState::QUIT_EVENT_LOOP))
+        {
+            m_state &= ~static_cast<uint8_t>(EventLoop::EventState::QUIT_EVENT_LOOP);
+
+            m_exitEventLoop = true;
         } 
     }
-    if(m_state & static_cast<uint8_t>(EventLoop::EventState::FD_LIST_MODIFIED))
-    {
-        std::cout << "update fd list "  << std::endl;
-        m_state &= ~ static_cast<uint8_t>(EventLoop::EventState::FD_LIST_MODIFIED);
-    }
 
-    if(m_state & static_cast<uint8_t>(EventLoop::EventState::QUIT_EVENT_LOOP))
-    {
-        std::cout << "quit event loop "  << std::endl;
-        m_state &= ~ static_cast<uint8_t>(EventLoop::EventState::QUIT_EVENT_LOOP);
-
-        m_exitEventLoop = true;
+    while( slots.size() > 0 )
+    {                    
+        auto slot = slots.front(); 
+        slots.pop();                                                   
+        slot.m_callback( slot.m_eventArgs);
     }      
     
 }
@@ -136,16 +186,21 @@ void EventLoop::run(){
     while(!m_exitEventLoop)
     {        
         int nEvents = poll( m_fds, m_fdsCount, -1);
-        //TODO je dois copier le m_fds et m_fdscount car il y a des risque de segfault si j ai un EventState::FD_LIST_MODIFIED
-        for (size_t i = 0; i < m_fdsCount || nEvents > 0; i++)
+        
+        for (size_t i = 0; (i < m_fdsCount) || (nEvents > 0) ; i++)
         {
             if( m_fds[i].revents == POLLIN)
             {
                 nEvents--;                
                                    
-                watchNotify(m_fds[i].fd);
-                
+                watchNotify(m_fds[i].fd);                
             }
+        }
+
+        if(m_updatePool)
+        {
+            m_updatePool = false;
+            updatePool();
         } 
     }
 }
@@ -153,8 +208,8 @@ void EventLoop::run(){
 bool EventLoop::runEventLoop(bool isThread)
 {
     if( isThread )
-    {
-        std::thread( &EventLoop::run, this).detach(); //TODO dans le destructeur il faut tuer ce thread        
+    {        
+        m_eventLoopThread = std::thread( &EventLoop::run, this); 
     }
     else{
         run();
@@ -164,7 +219,7 @@ bool EventLoop::runEventLoop(bool isThread)
 }
 
 void EventLoop::notify(const EventLoop::EventState state)
-{
+{    
     m_state |= static_cast<uint8_t>(state);
     uint64_t eventFdRequest = 1;
     ::write(m_eventFd, &eventFdRequest, sizeof(uint64_t));  
@@ -172,15 +227,17 @@ void EventLoop::notify(const EventLoop::EventState state)
 
 void EventLoop::subscribe(const std::string& signal, std::function<void (const std::shared_ptr<EventArgs>&)> slot)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
     m_subscriberList.push_back( std::make_pair( signal, slot) );
 }
 
-void EventLoop::publish(const std::string & signal, const std::shared_ptr<EventArgs>& eventArgs)
+void EventLoop::publish(const std::string& signal, const std::shared_ptr<EventArgs>& eventArgs)
 {    
+    std::lock_guard<std::mutex> lock(m_mutex);
     for(const auto& subscriber : m_subscriberList)
     {
         if(subscriber.first == signal)
-        {
+        {            
             m_queue.emplace( subscriber.second, eventArgs);
         }
     }

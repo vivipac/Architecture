@@ -42,19 +42,23 @@ class EventLoop
 
     public:
         EventLoop();
+        ~EventLoop();
 
-        bool addWatchToEventLoop( const Watch& watch);
+        void killEventLoop();
 
-        bool removeWatchFromEventLoop( const Watch& watch );
+        bool addWatchToEventLoop(const Watch& watch);
+
+        bool removeWatchFromEventLoop(const Watch& watch );
 
         bool runEventLoop(bool isThread = false);
         
         void subscribe(const std::string& signal, std::function<void (const std::shared_ptr<EventArgs>& eventArgs)> slot);
 
         void publish(const std::string& signal, const std::shared_ptr<EventArgs>& eventArgs = nullptr);            
-
         
-    private:
+    private:  
+        void updatePool();
+
         void run();
 
         void watchNotify(int fd);
@@ -70,7 +74,19 @@ class EventLoop
         size_t m_fdsCount;
         int m_eventFd ;
 
-        //contient la liste de tous les fd-callback ou on attend un evenement
+        //l'utilisateur peut lancer the eventLoop dans un thread (par default il n'est pas utilisé)
+        std::thread m_eventLoopThread;
+
+        //contient la list temporaire des watch a ajouté
+        std::vector<Watch> m_watchToAdd;
+
+        //contient la list temporaire des watch a supprimé
+        std::vector<Watch> m_watchToDel;
+
+        //indique qu'il faut mettre à jour le poll des evenement
+        bool m_updatePool;
+
+        //contient la liste de tous les fd-callback en attente d'evenement
         std::vector<Watch> m_watchList;
 
         //contient la liste des subscribers en attente d'un publisher, std::pair<signal, callback>

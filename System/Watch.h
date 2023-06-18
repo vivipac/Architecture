@@ -13,7 +13,8 @@ class Watch
     
     public:
         
-        Watch(int inFd, const std::function<void (void)> &callback, bool needData = true);        
+        Watch(int inFd, const std::function<void (void)> &callback, bool needData = true); 
+        Watch(const Watch& watch);       
         
         int fd() const;        
 

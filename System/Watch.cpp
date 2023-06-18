@@ -7,8 +7,13 @@ Watch::Watch(int inFd, const std::function<void (void)> &inCallback, bool readDa
     m_fd(inFd),        
     m_callback(inCallback),
     m_needData( readDataNeed )
+{}
+
+Watch::Watch(const Watch& watch)
 {
-    
+    m_fd = watch.m_fd;
+    m_callback = watch.m_callback;
+    m_needData = watch.m_needData;
 }
 
 int Watch::fd() const
