@@ -14,6 +14,7 @@ class Module
 {
     public:
         using Ptr = std::shared_ptr<vivi::EventLoop>;
+        
         virtual ~Module() = default;  
 
         virtual const std::string& className() = 0;      

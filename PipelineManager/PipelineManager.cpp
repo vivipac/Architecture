@@ -1,24 +1,39 @@
 #include "PipelineManager.h"
 
-PipelineManager::PipelineManager():
-    m_pipelineController("./pipeline.json"),
-    m_moduleManager("./Modules"),
-    m_pEventLoop( new vivi::EventLoop )
+PipelineManager::PipelineManager(const std::string& pipelineConfFilename, const std::string& modulesDirectory):
+    m_pipelineController(pipelineConfFilename),
+    m_moduleManager(modulesDirectory)    
 {    
 }
 
-void PipelineManager::componentsInitialization()
-{
-    //add Watcher in the eventLoop
+void PipelineManager::loadModules()
+{    
+    for(const auto & moduleName: m_pipelineController.getAllModules())
+    {      
+        std::cout << "we load Module " << moduleName << std::endl;  
+        m_moduleManager.addModule(moduleName);
+    }
 }
 
-void PipelineManager::errorSlot(const std::shared_ptr<EventArgs>& eventArgs)
+void PipelineManager::initModules(const Module::Ptr& eventLoop)
 {
-    //dynamic_cast EventArgs to ErrorInfo
-    //log and communication with ErrorServer
+    for(const auto & moduleName: m_pipelineController.getAllModules())
+    {        
+        ModuleLoader::ModulePtr pModule = nullptr;
+        try
+        {
+            pModule = m_moduleManager.getModule(moduleName);    
+        }
+        catch(const std::string& error)
+        {
+            std::cerr << error << '\n';
+            ::exit(EXIT_FAILURE);
+        }                    
+        pModule->init(eventLoop);
+    }
 }
 
-void PipelineManager::nextSlot(const std::shared_ptr<EventArgs>& eventArgs)
+void PipelineManager::runModule(const std::shared_ptr<EventArgs>& eventArgs)
 {    
     if( eventArgs )
     {
@@ -40,66 +55,38 @@ void PipelineManager::nextSlot(const std::shared_ptr<EventArgs>& eventArgs)
                 {
                     std::cerr << error << '\n';
                     ::exit(EXIT_FAILURE);
-                }
-
+                }                
+                
                 m_threadpool.add_task( [pModule, eventArgs](){
                     pModule->run(eventArgs);
-                });
+                });              
             }
             return;
         }
     }
 
     //error
-    
 }
 
-void PipelineManager::subscribe()
-{
-    m_pEventLoop->subscribe("next", [this](const std::shared_ptr<EventArgs>& eventArgs)
-    {
-        nextSlot(eventArgs);
-    });
-
-    m_pEventLoop->subscribe("error", [this](const std::shared_ptr<EventArgs>& eventArgs)
-    {   
-        errorSlot(eventArgs);
-    });
-}
-
-void PipelineManager::loadModules()
+void PipelineManager::updateModuleConfig(const Json::Value& config)
 {    
-    for(const auto & moduleName: m_pipelineController.getAllModules())
-    {      
-        std::cout << "we load Module " << moduleName << std::endl;  
-        m_moduleManager.addModule(moduleName);
+    std::string moduleName = config["moduleName"].asString();
+    Json::Value dataObject = config["data"];
+                           
+    ModuleLoader::ModulePtr pModule = nullptr;
+                    
+    try
+    {
+        pModule = m_moduleManager.getModule(moduleName);    
     }
-}
-
-void PipelineManager::initModules()
-{
-    for(const auto & moduleName: m_pipelineController.getAllModules())
-    {        
-        ModuleLoader::ModulePtr pModule = nullptr;
-        try
-        {
-            pModule = m_moduleManager.getModule(moduleName);    
-        }
-        catch(const std::string& error)
-        {
-            std::cerr << error << '\n';
-            ::exit(EXIT_FAILURE);
-        }                    
-        pModule->init(m_pEventLoop);
-    }
-}
-
-void PipelineManager::configureModules()
-{
-
-}
-
-void PipelineManager::startPipeline()
-{
-    m_pEventLoop->runEventLoop();
+    catch(const std::string& error)
+    {
+        std::cerr << error << '\n';
+        ::exit(EXIT_FAILURE);
+    }                
+    
+    m_threadpool.add_task( [pModule, dataObject](){
+        pModule->config(dataObject);
+    });              
+    
 }
