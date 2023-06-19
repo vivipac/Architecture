@@ -69,7 +69,8 @@ void PipelineManager::runModule(const std::shared_ptr<EventArgs>& eventArgs)
 }
 
 void PipelineManager::updateModuleConfig(const Json::Value& config)
-{    
+{   
+    //mettre exception et si error publish dans error 
     std::string moduleName = config["moduleName"].asString();
     Json::Value dataObject = config["data"];
                            

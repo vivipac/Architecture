@@ -3,6 +3,7 @@
 
 
 #include "../System/EventLoop.h"
+#include "../System/TcpClient.h"
 #include "PipelineManager.h"
 
       
@@ -14,14 +15,17 @@ class EventManager
     void runEventLoop();
      
     private: 
-    void pipelineInitalization();     
+    void pipelineInitialization();     
 
-    void watchersInitalization();
+    void watchersInitialization();
 
-    void subscribersInitalization();     
+    void subscribersInitialization(); 
+
+    void dataServerInitialization();    
     
     PipelineManager m_pipelineManager;    
     std::shared_ptr<vivi::EventLoop> m_pEventLoop;
+    vivi::TcpClient m_dataServerClient;
     
                                                                               
 };
