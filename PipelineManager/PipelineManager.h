@@ -6,6 +6,7 @@
 
 #include "../Module/ModuleInfo.h"
 #include "../ModuleManager/ModuleManager.h"
+#include "../System/EventLoop.h"
 #include "../System/DefaultThreadPool.h"
 #include "PipelineController.h"
 
@@ -13,18 +14,19 @@
 class PipelineManager
 {
     public:
-    PipelineManager(const std::string& pipelineConfFilename = "./pipeline.json", const std::string& modulesDirectory = "./Modules");        
+    PipelineManager(const Module::Ptr& eventLoop, const std::string& pipelineConfFilename = "./pipeline.json", const std::string& modulesDirectory = "./Modules");        
 
     void loadModules();
 
-    void initModules(const Module::Ptr& eventLoop);   
+    void initModules();   
 
     void updateModuleConfig(const Json::Value& config);
 
     void runModule(const std::shared_ptr<EventArgs>& eventArgs);
 
 
-    private:        
+    private: 
+    Module::Ptr m_eventLoop;       
     PipelineController m_pipelineController;
     ModuleManager m_moduleManager;
     Frontmatec::Libs::Common::DefaultThreadPool m_threadpool;

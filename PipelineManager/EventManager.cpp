@@ -2,7 +2,8 @@
 
 EventManager::EventManager():        
     m_pEventLoop( new vivi::EventLoop ),
-    m_dataServerClient("127.0.0.1", 60000, *m_pEventLoop)
+    m_pipelineManager(m_pEventLoop),
+    m_proxyClient("127.0.0.1", 60000, *m_pEventLoop)
 {  
     pipelineInitialization();     
 
@@ -14,58 +15,78 @@ EventManager::EventManager():
 void EventManager::pipelineInitialization()
 {
     m_pipelineManager.loadModules();
-    m_pipelineManager.initModules( m_pEventLoop );
+    m_pipelineManager.initModules();
 }
 
 void EventManager::watchersInitialization()
 {
-    dataServerInitialization();
+    //proxyInitialization();
 }
 
-void EventManager::dataServerInitialization()
+void EventManager::proxyInitialization()
 {            
-    m_dataServerClient.addWatchToEventLoop( [this](){
-        
-        unsigned char buffer[256];
-        
-        int bytesRead = m_dataServerClient.recv(buffer, 256);
-        buffer[bytesRead] = 0;
-
-        std::cout << "message received = " << buffer << std::endl;
-        //test if message is correct
-        // Convert the buffer to a string
-        try {
-            std::string jsonString(reinterpret_cast<const char*>(buffer));
-            // Parse the string as JSON
-            Json::Value config;
-            Json::CharReaderBuilder builder;
-            std::istringstream jsonStream(jsonString); // Create an input stream
-            std::string parseErrors;
-            if (!Json::parseFromStream(builder, jsonStream, &config, &parseErrors)) {
-                std::cerr << "Failed to parse the JSON string: " << parseErrors << std::endl;
-                //on envoie un message d'erreur au serveur
-                char message[] = "Error"; 
-                m_dataServerClient.sendTo( message , sizeof(message));
-                return;
-            }
-            m_pipelineManager.updateModuleConfig(config);
-
-        } catch (const Json::Exception& e) {
-            std::cerr << "Error json: " << e.what() << std::endl;
-            char message[] = "Error"; 
-            m_dataServerClient.sendTo( message , sizeof(message));            
-        }
-
+    m_proxyClient.addWatchToEventLoop( [this](){        
+        parseCommands();
     });
 
-    bool ret = m_dataServerClient.connect();
-    if(!ret)
-        std::cerr << "Impossible to connect to dataServer" << std::endl;
-
+    if(!m_proxyClient.connect())
+    {
+        std::cerr << "Impossible to connect to proxy" << std::endl;
+        m_pEventLoop->publish("proxyConnection");
+        return;
+    }
+        
     char message[] = "Salut mon poulet\n"; //TODO libCommunication and send getAllConfig in Json format
-    m_dataServerClient.sendTo( message , 18);
+    m_proxyClient.sendTo( message , 18);
 }
 
+void EventManager::parseCommands()
+{
+    unsigned char buffer[4096];//TODO
+        
+    int bytesRead = m_proxyClient.recv(buffer, sizeof(buffer));
+    if(bytesRead <= 0)
+    {
+        std::cerr << "read returns error : " << std::strerror(errno) << std::endl;
+        m_pEventLoop->publish("proxyConnection");
+        return;
+    }
+    buffer[bytesRead] = 0;
+
+    std::cout << "message received = " << buffer << std::endl;
+    
+    std::string jsonString(reinterpret_cast<const char*>(buffer));
+    Json::Value config;
+    Json::CharReaderBuilder builder;
+    std::istringstream jsonStream(jsonString); 
+    std::string parseErrors;
+    if (!Json::parseFromStream(builder, jsonStream, &config, &parseErrors)) {
+        std::cerr << "Failed to parse the JSON string: " << parseErrors << std::endl;
+        //send an error message to the proxy
+        m_proxyClient.sendTo( parseErrors.c_str() , parseErrors.size());
+        return;
+    }
+
+    if (!config.isMember("Command"))
+    {
+        std::cerr << "Command label is not found" << std::endl;
+        //m_proxyClient.sendTo( parseErrors.c_str() , parseErrors.size());
+        //m_pEventLoop->publish("error");
+        return;
+    }
+    std::string command = config["Command"].asString();
+
+    if(command == "updateData")
+    {
+        m_pipelineManager.updateModuleConfig(config);
+    }
+    else
+    {
+        std::cerr << "Command " << command << " not recognized" << std::endl;
+        //m_proxyClient.sendTo( parseErrors.c_str() , parseErrors.size());
+        //m_pEventLoop->publish("error");
+    }     
+}
 
 void EventManager::subscribersInitialization()
 {
@@ -74,9 +95,17 @@ void EventManager::subscribersInitialization()
         m_pipelineManager.runModule(eventArgs);
     });
 
+    m_pEventLoop->subscribe("proxyConnection", [this](const std::shared_ptr<EventArgs>& eventArgs)
+    {
+        if(!m_proxyClient.connect())
+        {
+            m_pEventLoop->publish("proxyConnection");
+        }
+    });
+
     // m_pEventLoop->subscribe("error", [this](const std::shared_ptr<EventArgs>& eventArgs)
     // {
-    //     m_errorManager.errorManage(eventArgs);
+    //     m_errorManager.errorManager(eventArgs);
     // });
 
 }
@@ -85,5 +114,3 @@ void EventManager::runEventLoop()
 {
     m_pEventLoop->runEventLoop();
 }
-
-

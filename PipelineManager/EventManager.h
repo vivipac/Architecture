@@ -21,11 +21,13 @@ class EventManager
 
     void subscribersInitialization(); 
 
-    void dataServerInitialization();    
+    void proxyInitialization();
+
+    void parseCommands();    
     
     PipelineManager m_pipelineManager;    
     std::shared_ptr<vivi::EventLoop> m_pEventLoop;
-    vivi::TcpClient m_dataServerClient;
+    vivi::TcpClient m_proxyClient;
     
                                                                               
 };

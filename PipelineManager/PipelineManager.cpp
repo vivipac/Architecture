@@ -1,10 +1,10 @@
 #include "PipelineManager.h"
 
-PipelineManager::PipelineManager(const std::string& pipelineConfFilename, const std::string& modulesDirectory):
+PipelineManager::PipelineManager(const Module::Ptr& eventLoop, const std::string& pipelineConfFilename, const std::string& modulesDirectory):
+    m_eventLoop(eventLoop),
     m_pipelineController(pipelineConfFilename),
     m_moduleManager(modulesDirectory)    
-{    
-}
+{}
 
 void PipelineManager::loadModules()
 {    
@@ -15,7 +15,7 @@ void PipelineManager::loadModules()
     }
 }
 
-void PipelineManager::initModules(const Module::Ptr& eventLoop)
+void PipelineManager::initModules()
 {
     for(const auto & moduleName: m_pipelineController.getAllModules())
     {        
@@ -29,7 +29,7 @@ void PipelineManager::initModules(const Module::Ptr& eventLoop)
             std::cerr << error << '\n';
             ::exit(EXIT_FAILURE);
         }                    
-        pModule->init(eventLoop);
+        pModule->init(m_eventLoop);
     }
 }
 
@@ -37,11 +37,10 @@ void PipelineManager::runModule(const std::shared_ptr<EventArgs>& eventArgs)
 {    
     if( eventArgs )
     {
-        std::shared_ptr<ModuleInfo> moduleInfo = std::dynamic_pointer_cast<ModuleInfo>(eventArgs); 
+        const std::shared_ptr<ModuleInfo> moduleInfo = std::dynamic_pointer_cast<ModuleInfo>(eventArgs); 
         if( moduleInfo != nullptr)
         {
             const std::string& moduleName = moduleInfo->m_moduleName;            
-
             const std::vector<std::string> modules = m_pipelineController.whoAreNext( moduleName );
 
             ModuleLoader::ModulePtr pModule = nullptr;
@@ -65,14 +64,20 @@ void PipelineManager::runModule(const std::shared_ptr<EventArgs>& eventArgs)
         }
     }
 
-    //error
+    std::cerr << "eventArgs is incorrect" << '\n';
+    //m_eventLoop->publish("error");
 }
 
 void PipelineManager::updateModuleConfig(const Json::Value& config)
 {   
-    //mettre exception et si error publish dans error 
-    std::string moduleName = config["moduleName"].asString();
-    Json::Value dataObject = config["data"];
+    if (!config.isMember("ModuleName") || !config.isMember("Data")) {
+        std::cerr << "error in json format, ModuleName or Data does not exist" << '\n';
+        //m_eventLoop->publish("error");
+        return;
+    }
+
+    std::string moduleName = config["ModuleName"].asString();
+    Json::Value dataObject = config["Data"];
                            
     ModuleLoader::ModulePtr pModule = nullptr;
                     

@@ -30,7 +30,7 @@ class TcpClient
 
     bool connect();    // permet de se connecter à l'adresse Ip et au port
 
-    int sendTo(char* buffer, int size);
+    int sendTo(const char* buffer, int size);
 
     int recv(unsigned char* buffer, int size);
 

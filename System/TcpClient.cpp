@@ -48,7 +48,7 @@ void TcpClient::addWatchToEventLoop(const std::function<void (void)>& inCallback
     m_loop.addWatchToEventLoop( w );
 }
 
-int TcpClient::sendTo(char* buffer, int size)
+int TcpClient::sendTo(const char* buffer, int size)
 {
     return ::write(m_socketFd, buffer, size);
     
@@ -56,7 +56,7 @@ int TcpClient::sendTo(char* buffer, int size)
 
 int TcpClient::recv(unsigned char* buffer, int size)
 {
-    return :: read( m_socketFd, buffer, size );
+    return ::read( m_socketFd, buffer, size );
 }
 
 

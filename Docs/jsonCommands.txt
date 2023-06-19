@@ -1,0 +1,24 @@
+
+//differents command we can send to the proxy, dataSever...
+
+{
+    "Command":"updateData",
+    "ModuleName":"Vision",
+    "Data":{
+        "height": 128,
+        "width":256,
+        "color":"red"
+    }
+}
+
+{
+    "Command":"startPipeline"
+}
+
+{
+    "Command":"stopPipeline"
+}
+
+{
+    "Command":"getAllDataConfig"
+}
