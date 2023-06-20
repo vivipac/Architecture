@@ -6,10 +6,13 @@
     "ModuleName":"Vision",
     "Data":{
         "height": 128,
-        "width":256,
+        "width": 256,
         "color":"red"
     }
 }
+
+{"Command":"updateData","ModuleName":"Vision","Data":{"height": 128,"width": 256,"color":"red"}}
+
 
 {
     "Command":"startPipeline"

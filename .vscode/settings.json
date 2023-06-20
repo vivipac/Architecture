@@ -59,6 +59,7 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "ranges": "cpp",
-        "span": "cpp"
+        "span": "cpp",
+        "csignal": "cpp"
     }
 }

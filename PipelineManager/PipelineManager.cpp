@@ -58,7 +58,7 @@ void PipelineManager::runModule(const std::shared_ptr<EventArgs>& eventArgs)
                 
                 m_threadpool.add_task( [pModule, eventArgs](){
                     pModule->run(eventArgs);
-                });              
+                });          
             }
             return;
         }
@@ -93,6 +93,6 @@ void PipelineManager::updateModuleConfig(const Json::Value& config)
     
     m_threadpool.add_task( [pModule, dataObject](){
         pModule->config(dataObject);
-    });              
+    });             
     
 }

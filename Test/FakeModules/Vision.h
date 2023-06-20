@@ -30,6 +30,7 @@ class Vision : public Module
     private:
     const std::string m_className;
     Module::Ptr m_eventLoopToPublish;
+    std::mutex m_mutex;
                                                                                        
 };
 FRONTMATEC_MODULE(Vision);

@@ -5,11 +5,12 @@ EventManager::EventManager():
     m_pipelineManager(m_pEventLoop),
     m_proxyClient("127.0.0.1", 60000, *m_pEventLoop)
 {  
+    subscribersInitialization();
+
     pipelineInitialization();     
 
     watchersInitialization();
-
-    subscribersInitialization();
+    
 }
 
 void EventManager::pipelineInitialization()
@@ -20,7 +21,7 @@ void EventManager::pipelineInitialization()
 
 void EventManager::watchersInitialization()
 {
-    //proxyInitialization();
+    proxyInitialization();
 }
 
 void EventManager::proxyInitialization()
@@ -55,37 +56,45 @@ void EventManager::parseCommands()
 
     std::cout << "message received = " << buffer << std::endl;
     
-    std::string jsonString(reinterpret_cast<const char*>(buffer));
-    Json::Value config;
-    Json::CharReaderBuilder builder;
-    std::istringstream jsonStream(jsonString); 
-    std::string parseErrors;
-    if (!Json::parseFromStream(builder, jsonStream, &config, &parseErrors)) {
-        std::cerr << "Failed to parse the JSON string: " << parseErrors << std::endl;
-        //send an error message to the proxy
-        m_proxyClient.sendTo( parseErrors.c_str() , parseErrors.size());
-        return;
-    }
+    try
+    {
+        std::string jsonString(reinterpret_cast<const char*>(buffer));
+        Json::Value config;
+        Json::CharReaderBuilder builder;
+        std::istringstream jsonStream(jsonString); 
+        std::string parseErrors;
+        if (!Json::parseFromStream(builder, jsonStream, &config, &parseErrors)) {
+            std::cerr << "Failed to parse the JSON string: " << parseErrors << std::endl;
+            //send an error message to the proxy
+            m_proxyClient.sendTo( parseErrors.c_str() , parseErrors.size());
+            return;
+        }
 
-    if (!config.isMember("Command"))
-    {
-        std::cerr << "Command label is not found" << std::endl;
-        //m_proxyClient.sendTo( parseErrors.c_str() , parseErrors.size());
-        //m_pEventLoop->publish("error");
-        return;
-    }
-    std::string command = config["Command"].asString();
+        if (!config.isMember("Command"))
+        {
+            std::cerr << "Command label is not found" << std::endl;
+            //m_proxyClient.sendTo( parseErrors.c_str() , parseErrors.size());
+            //m_pEventLoop->publish("error");
+            return;
+        }
+        std::string command = config["Command"].asString();
 
-    if(command == "updateData")
-    {
-        m_pipelineManager.updateModuleConfig(config);
+        if(command == "updateData")
+        {
+            m_pipelineManager.updateModuleConfig(config);
+        }
+        else
+        {
+            std::cerr << "Command " << command << " not recognized" << std::endl;
+            //m_proxyClient.sendTo( parseErrors.c_str() , parseErrors.size());
+            //m_pEventLoop->publish("error");
+        }  
     }
-    else
+    catch(...)
     {
-        std::cerr << "Command " << command << " not recognized" << std::endl;
-        //m_proxyClient.sendTo( parseErrors.c_str() , parseErrors.size());
-        //m_pEventLoop->publish("error");
-    }     
+        std::cerr << "exception caught" << std::endl;
+    }
+           
 }
 
 void EventManager::subscribersInitialization()
@@ -97,6 +106,7 @@ void EventManager::subscribersInitialization()
 
     m_pEventLoop->subscribe("proxyConnection", [this](const std::shared_ptr<EventArgs>& eventArgs)
     {
+        std::cout << "trying to connect again" << std::endl;
         if(!m_proxyClient.connect())
         {
             m_pEventLoop->publish("proxyConnection");

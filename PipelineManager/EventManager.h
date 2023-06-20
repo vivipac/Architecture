@@ -25,8 +25,8 @@ class EventManager
 
     void parseCommands();    
     
-    PipelineManager m_pipelineManager;    
     std::shared_ptr<vivi::EventLoop> m_pEventLoop;
+    PipelineManager m_pipelineManager;        
     vivi::TcpClient m_proxyClient;
     
                                                                               

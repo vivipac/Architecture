@@ -197,7 +197,7 @@ void EventLoop::eventNotify()
 void EventLoop::run(){ 
 
     while(!m_exitEventLoop)
-    {        
+    {      
         int nEvents = ::poll( m_fds, m_fdsCount, -1);
         
         for (size_t i = 0; (i < m_fdsCount) || (nEvents > 0) ; i++)
