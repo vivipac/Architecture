@@ -44,10 +44,10 @@ void EventManager::proxyInitialization()
 void EventManager::parseCommands()
 {
     unsigned char buffer[4096];//TODO
-        
     int bytesRead = m_proxyClient.recv(buffer, sizeof(buffer));
     if(bytesRead <= 0)
     {
+        //TODO need to create a new socket because Transport endpoint is already connected (EISCONN)(so delete the watcher and build one again)
         std::cerr << "read returns error : " << std::strerror(errno) << std::endl;
         m_pEventLoop->publish("proxyConnection");
         return;
@@ -109,6 +109,7 @@ void EventManager::subscribersInitialization()
         std::cout << "trying to connect again" << std::endl;
         if(!m_proxyClient.connect())
         {
+            std::this_thread::sleep_for(std::chrono::seconds(1)); //TODO set a timer of 3 sec into the event loop
             m_pEventLoop->publish("proxyConnection");
         }
     });

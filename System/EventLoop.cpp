@@ -200,9 +200,9 @@ void EventLoop::run(){
     {      
         int nEvents = ::poll( m_fds, m_fdsCount, -1);
         
-        for (size_t i = 0; (i < m_fdsCount) || (nEvents > 0) ; i++)
+        for (size_t i = 0; (i < m_fdsCount) && (nEvents > 0) ; i++)
         {
-            if( m_fds[i].revents == POLLIN)
+            if( m_fds[i].revents == POLLIN)//check if we have just check POLLIN
             {
                 nEvents--;                
                                    
