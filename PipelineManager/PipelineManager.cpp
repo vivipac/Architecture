@@ -42,10 +42,11 @@ void PipelineManager::runModule(const std::shared_ptr<EventArgs>& eventArgs)
         {
             const std::string& moduleName = moduleInfo->m_moduleName;            
             const std::vector<std::string> modules = m_pipelineController.whoAreNext( moduleName );
-
+            std::cout << "we are searching from module : " << moduleName << ", size = " << modules.size() <<  std::endl;   
             ModuleLoader::ModulePtr pModule = nullptr;
             for(const auto & module: modules)
-            {                     
+            {     
+                             
                 try
                 {
                     pModule = m_moduleManager.getModule(module);    

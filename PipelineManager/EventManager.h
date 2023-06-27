@@ -27,7 +27,7 @@ class EventManager
     
     std::shared_ptr<vivi::EventLoop> m_pEventLoop;
     PipelineManager m_pipelineManager;        
-    vivi::TcpClient m_proxyClient;
+    std::unique_ptr<vivi::TcpClient> m_pProxyClient;
     
                                                                               
 };

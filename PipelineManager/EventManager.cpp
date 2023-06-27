@@ -3,7 +3,7 @@
 EventManager::EventManager():        
     m_pEventLoop( new vivi::EventLoop ),
     m_pipelineManager(m_pEventLoop),
-    m_proxyClient("127.0.0.1", 60000, *m_pEventLoop)
+    m_pProxyClient( new vivi::TcpClient("127.0.0.1", 60000, *m_pEventLoop) )
 {  
     subscribersInitialization();
 
@@ -26,11 +26,11 @@ void EventManager::watchersInitialization()
 
 void EventManager::proxyInitialization()
 {            
-    m_proxyClient.addWatchToEventLoop( [this](){        
+    m_pProxyClient->addWatchToEventLoop( [this](){        
         parseCommands();
     });
 
-    if(!m_proxyClient.connect())
+    if(!m_pProxyClient->connect())
     {
         std::cerr << "Impossible to connect to proxy" << std::endl;
         m_pEventLoop->publish("proxyConnection");
@@ -38,16 +38,15 @@ void EventManager::proxyInitialization()
     }
         
     char message[] = "Salut mon poulet\n"; //TODO libCommunication and send getAllConfig in Json format
-    m_proxyClient.sendTo( message , 18);
+    m_pProxyClient->sendTo( message , 18);
 }
 
 void EventManager::parseCommands()
 {
-    unsigned char buffer[4096];//TODO
-    int bytesRead = m_proxyClient.recv(buffer, sizeof(buffer));
+    unsigned char buffer[4096];//TODO avoir une fonction qui detect dans le message un format json et le découpe s'il y en a eu plusieur
+    int bytesRead = m_pProxyClient->recv(buffer, sizeof(buffer));
     if(bytesRead <= 0)
     {
-        //TODO need to create a new socket because Transport endpoint is already connected (EISCONN)(so delete the watcher and build one again)
         std::cerr << "read returns error : " << std::strerror(errno) << std::endl;
         m_pEventLoop->publish("proxyConnection");
         return;
@@ -66,7 +65,7 @@ void EventManager::parseCommands()
         if (!Json::parseFromStream(builder, jsonStream, &config, &parseErrors)) {
             std::cerr << "Failed to parse the JSON string: " << parseErrors << std::endl;
             //send an error message to the proxy
-            m_proxyClient.sendTo( parseErrors.c_str() , parseErrors.size());
+            m_pProxyClient->sendTo( parseErrors.c_str() , parseErrors.size());
             return;
         }
 
@@ -86,7 +85,7 @@ void EventManager::parseCommands()
         else
         {
             std::cerr << "Command " << command << " not recognized" << std::endl;
-            //m_proxyClient.sendTo( parseErrors.c_str() , parseErrors.size());
+            //m_proxyClient.sendTo( "Command not recognized" , xxx.size());
             //m_pEventLoop->publish("error");
         }  
     }
@@ -107,11 +106,24 @@ void EventManager::subscribersInitialization()
     m_pEventLoop->subscribe("proxyConnection", [this](const std::shared_ptr<EventArgs>& eventArgs)
     {
         std::cout << "trying to connect again" << std::endl;
-        if(!m_proxyClient.connect())
+        if(!m_pProxyClient->isConnected())//delete and build another m_proxyClient
         {
-            std::this_thread::sleep_for(std::chrono::seconds(1)); //TODO set a timer of 3 sec into the event loop
-            m_pEventLoop->publish("proxyConnection");
+            if(!m_pProxyClient->connect())//delete and build another m_proxyClient
+            {
+                std::this_thread::sleep_for(std::chrono::seconds(3)); //TODO set a timer of 3 sec into the event loop
+                m_pProxyClient.reset(new vivi::TcpClient("127.0.0.1", 60000, *m_pEventLoop));
+                m_pProxyClient->addWatchToEventLoop( [this](){        
+                    parseCommands();
+                });
+                m_pEventLoop->publish("proxyConnection");
+            }
         }
+        {
+           std::cout << "We are Connected" << std::endl; 
+        }
+        
+        
+        
     });
 
     // m_pEventLoop->subscribe("error", [this](const std::shared_ptr<EventArgs>& eventArgs)

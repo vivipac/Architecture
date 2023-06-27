@@ -23,10 +23,9 @@ class TcpClient
 
     void addWatchToEventLoop(const std::function<void (void)>& inCallback );  
 
-    template<class T_Obj>
-    inline void addWatchToEventLoop(T_Obj* obj, void (T_Obj::*callback)(void)){
-        addWatchToEventLoop( std::bind( callback, obj));
-    }
+    void removeWatchToEventLoop(); 
+
+    bool isConnected(); 
 
     bool connect();    // permet de se connecter à l'adresse Ip et au port
 
@@ -40,6 +39,8 @@ class TcpClient
     std::string m_ip;
     short m_port;
     EventLoop & m_loop;
+    Watch m_watch;
+    bool m_isConnected;
 
     struct sockaddr_in m_sockaddr;
     

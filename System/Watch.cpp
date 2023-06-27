@@ -16,6 +16,15 @@ Watch::Watch(const Watch& watch)
     m_needData = watch.m_needData;
 }
 
+Watch& Watch::operator=(const Watch& other)
+{
+    m_fd = other.m_fd;
+    m_callback = other.m_callback;
+    m_needData = other.m_needData;
+
+    return *this;
+}
+
 int Watch::fd() const
 {
     return m_fd;

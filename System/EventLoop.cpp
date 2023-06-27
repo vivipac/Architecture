@@ -29,7 +29,7 @@ EventLoop::EventLoop():
 
     m_fds = static_cast<struct pollfd*> ( ::malloc( sizeof( struct pollfd) ) );
     m_fds[m_fdsCount].fd = m_eventFd;
-    m_fds[m_fdsCount].events = POLLIN | POLLHUP | POLLERR ;
+    m_fds[m_fdsCount].events = POLLIN  ;
 
     m_fdsCount++;    
 }
@@ -84,7 +84,7 @@ void EventLoop::updatePool()
         for(const auto& watch : m_watchToAdd)
         {
             tmp[m_fdsCount].fd = watch.fd();
-            tmp[m_fdsCount].events = POLLIN | POLLHUP | POLLERR ;
+            tmp[m_fdsCount].events = POLLIN ;
 
             m_watchList.push_back( watch );
 
@@ -111,7 +111,7 @@ void EventLoop::updatePool()
             if(adding)
             {
                 tmp2[i].fd = tmp[i].fd;
-                tmp2[i].events = POLLIN | POLLHUP | POLLERR ;
+                tmp2[i].events = POLLIN ;
             }        
         }  
 
@@ -245,7 +245,7 @@ void EventLoop::subscribe(const std::string& signal, std::function<void (const s
 }
 
 void EventLoop::publish(const std::string& signal, const std::shared_ptr<EventArgs>& eventArgs)
-{    
+{        
     std::lock_guard<std::mutex> lock(m_mutex);
     for(const auto& subscriber : m_subscriberList)
     {

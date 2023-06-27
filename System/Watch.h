@@ -14,7 +14,8 @@ class Watch
     public:
         
         Watch(int inFd, const std::function<void (void)> &callback, bool needData = true); 
-        Watch(const Watch& watch);       
+        Watch(const Watch& watch);  
+        Watch&operator=(const Watch& other);
         
         int fd() const;        
 
