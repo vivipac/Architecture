@@ -45,15 +45,14 @@ void PipelineManager::runModule(const std::shared_ptr<EventArgs>& eventArgs)
             std::cout << "we are searching from module : " << moduleName << ", size = " << modules.size() <<  std::endl;   
             ModuleLoader::ModulePtr pModule = nullptr;
             for(const auto & module: modules)
-            {     
-                             
+            {                                  
                 try
                 {
                     pModule = m_moduleManager.getModule(module);    
                 }
                 catch(const std::string& error)
                 {
-                    std::cerr << error << '\n';
+                    std::cerr << "nique ta mere : " << error << '\n';
                     ::exit(EXIT_FAILURE);
                 }                
                 

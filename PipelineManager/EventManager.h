@@ -3,7 +3,7 @@
 
 
 #include "../System/EventLoop.h"
-#include "../System/TcpClient.h"
+#include "../ProxyManager/ProxyManager.h"
 #include "PipelineManager.h"
 
       
@@ -17,17 +17,13 @@ class EventManager
     private: 
     void pipelineInitialization();     
 
-    void watchersInitialization();
-
     void subscribersInitialization(); 
 
-    void proxyInitialization();
-
-    void parseCommands();    
+    void proxyInitialization();   
     
     std::shared_ptr<vivi::EventLoop> m_pEventLoop;
     PipelineManager m_pipelineManager;        
-    std::unique_ptr<vivi::TcpClient> m_pProxyClient;
+    ProxyManager m_proxy;;
     
                                                                               
 };

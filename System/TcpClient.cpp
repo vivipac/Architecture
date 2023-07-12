@@ -17,6 +17,7 @@ TcpClient::TcpClient(std::string ip, short port, EventLoop & loop):
         std::cout << "socket error : " << strerror(errno) << std::endl;
         return ;
     }
+    std::cerr << "m_socketFd created is " << m_socketFd << std::endl;
     
     ::memset(&m_sockaddr, 0, sizeof(struct sockaddr_in) );
 
@@ -28,8 +29,8 @@ TcpClient::TcpClient(std::string ip, short port, EventLoop & loop):
 
 TcpClient::~TcpClient()
 {
-    //std::cout << "we delete an object of type TcpClient" << std::endl;
-    //removeWatchToEventLoop();
+    std::cout << "we delete an object of type TcpClient" << std::endl;
+    removeWatchToEventLoop();
     //::close(m_socketFd); 
 }
 

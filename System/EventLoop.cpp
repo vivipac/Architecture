@@ -90,6 +90,7 @@ void EventLoop::updatePool()
 
             m_fdsCount++;
         }
+        m_watchToAdd.clear();
     }    
 
     //delete Watch
@@ -121,10 +122,16 @@ void EventLoop::updatePool()
             {
                 if( watch.fd() == it->fd())
                 {
+                    std::cerr << "I am trying to close the fd : " << watch.fd() << std::endl;
+                    if( ::close(watch.fd()) < 0 )
+                    {
+                        std::cerr << "::close error : " << std::strerror(errno) << std::endl;
+                    }
                     it = m_watchList.erase(it);
                 }
             }
         }
+        m_watchToDel.clear();
 
         tmp = tmp2;
     }    
